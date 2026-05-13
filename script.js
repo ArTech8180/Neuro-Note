@@ -1433,6 +1433,505 @@ function toggleThemeDropdown(){
 
 }
 
+
+/* =========================
+   INSERT DRAW BLOCK
+========================= */
+
+function insertDrawBlock(){
+
+    const canvasId =
+    "canvas-" + Date.now();
+
+    const block =
+    document.createElement("div");
+
+    block.classList.add(
+        "draw-block"
+    );
+
+    block.contentEditable =
+    false;
+
+    block.innerHTML = `
+
+        <div class="draw-tools">
+
+            <div class="drag-handle">
+                ⠿ Drag
+            </div>
+
+            <button onclick="setTool('${canvasId}','pen')">
+                Pen
+            </button>
+
+            <button onclick="setTool('${canvasId}','eraser')">
+                Eraser
+            </button>
+
+            <button onclick="setTool('${canvasId}','line')">
+                Line
+            </button>
+
+            <button onclick="setTool('${canvasId}','rect')">
+                Rectangle
+            </button>
+
+            <button onclick="setTool('${canvasId}','circle')">
+                Circle
+            </button>
+
+            <input
+                type="color"
+                value="#ffffff"
+                onchange="setColor('${canvasId}', this.value)"
+            >
+
+            <button onclick="clearBlockCanvas('${canvasId}')">
+                Clear
+            </button>
+
+            <button onclick="deleteDrawBlock(this)">
+                Delete
+            </button>
+
+        </div>
+
+        <div class="canvas-wrapper">
+
+            <canvas
+                id="${canvasId}"
+                class="draw-canvas">
+            </canvas>
+
+            <div class="resize-handle"></div>
+
+        </div>
+
+    `;
+
+    editor.appendChild(block);
+
+    setupCanvas(canvasId);
+
+    enableDragging(block);
+
+    enableResize(block);
+
+}
+
+/* =========================
+   SETUP CANVAS
+========================= */
+
+function setupCanvas(canvasId){
+
+    const canvas =
+    document.getElementById(canvasId);
+
+    const ctx =
+    canvas.getContext("2d");
+
+    canvas.width = 700;
+    canvas.height = 400;
+
+    canvasData[canvasId] = {
+
+        tool: "pen",
+        color: "#ffffff"
+
+    };
+
+    let drawing = false;
+
+    let startX = 0;
+    let startY = 0;
+
+    let snapshot = null;
+
+    function getMousePos(e){
+
+        const rect =
+        canvas.getBoundingClientRect();
+
+        return {
+
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+
+        };
+
+    }
+
+    canvas.addEventListener(
+        "mousedown",
+        (e) => {
+
+            drawing = true;
+
+            const pos =
+            getMousePos(e);
+
+            startX = pos.x;
+            startY = pos.y;
+
+            snapshot =
+            ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                startX,
+                startY
+            );
+
+        }
+    );
+
+    canvas.addEventListener(
+        "mousemove",
+        (e) => {
+
+            if(!drawing) return;
+
+            const tool =
+            canvasData[canvasId].tool;
+
+            const color =
+            canvasData[canvasId].color;
+
+            const pos =
+            getMousePos(e);
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+
+            if(tool === "pen"){
+
+                ctx.lineTo(
+                    pos.x,
+                    pos.y
+                );
+
+                ctx.stroke();
+
+            }
+
+            else if(tool === "eraser"){
+
+                ctx.clearRect(
+                    pos.x - 10,
+                    pos.y - 10,
+                    20,
+                    20
+                );
+
+            }
+
+            else{
+
+                ctx.putImageData(
+                    snapshot,
+                    0,
+                    0
+                );
+
+                if(tool === "line"){
+
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        startX,
+                        startY
+                    );
+
+                    ctx.lineTo(
+                        pos.x,
+                        pos.y
+                    );
+
+                    ctx.stroke();
+
+                }
+
+                if(tool === "rect"){
+
+                    ctx.strokeRect(
+                        startX,
+                        startY,
+                        pos.x - startX,
+                        pos.y - startY
+                    );
+
+                }
+
+                if(tool === "circle"){
+
+                    const radius =
+                    Math.sqrt(
+                        Math.pow(
+                            pos.x - startX,
+                            2
+                        ) +
+                        Math.pow(
+                            pos.y - startY,
+                            2
+                        )
+                    );
+
+                    ctx.beginPath();
+
+                    ctx.arc(
+                        startX,
+                        startY,
+                        radius,
+                        0,
+                        Math.PI * 2
+                    );
+
+                    ctx.stroke();
+
+                }
+
+            }
+
+        }
+    );
+
+    canvas.addEventListener(
+        "mouseup",
+        () => {
+
+            drawing = false;
+
+        }
+    );
+
+}
+
+/* =========================
+   TOOL SETTINGS
+========================= */
+
+function setTool(canvasId, tool){
+
+    canvasData[canvasId].tool =
+    tool;
+
+}
+
+function setColor(canvasId, color){
+
+    canvasData[canvasId].color =
+    color;
+
+}
+
+/* =========================
+   CLEAR CANVAS
+========================= */
+
+function clearBlockCanvas(canvasId){
+
+    const canvas =
+    document.getElementById(canvasId);
+
+    const ctx =
+    canvas.getContext("2d");
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+/* =========================
+   DELETE DRAW BLOCK
+========================= */
+
+function deleteDrawBlock(button){
+
+    const block =
+    button.closest(".draw-block");
+
+    if(block){
+
+        block.remove();
+
+    }
+
+}
+
+/* =========================
+   DRAG SYSTEM
+========================= */
+
+function enableDragging(element){
+
+    const handle =
+    element.querySelector(
+        ".drag-handle"
+    );
+
+    let dragging = false;
+
+    let currentX = 0;
+    let currentY = 0;
+
+    let startX = 0;
+    let startY = 0;
+
+    handle.addEventListener(
+        "mousedown",
+        (e) => {
+
+            dragging = true;
+
+            startX =
+            e.clientX - currentX;
+
+            startY =
+            e.clientY - currentY;
+
+        }
+    );
+
+    document.addEventListener(
+        "mousemove",
+        (e) => {
+
+            if(!dragging) return;
+
+            currentX =
+            e.clientX - startX;
+
+            currentY =
+            e.clientY - startY;
+
+            element.style.transform =
+            `translate(${currentX}px, ${currentY}px)`;
+
+        }
+    );
+
+    document.addEventListener(
+        "mouseup",
+        () => {
+
+            dragging = false;
+
+        }
+    );
+
+}
+
+/* =========================
+   RESIZE SYSTEM
+========================= */
+
+function enableResize(block){
+
+    const handle =
+    block.querySelector(
+        ".resize-handle"
+    );
+
+    const wrapper =
+    block.querySelector(
+        ".canvas-wrapper"
+    );
+
+    const canvas =
+    block.querySelector(
+        ".draw-canvas"
+    );
+
+    let resizing = false;
+
+    handle.addEventListener(
+        "mousedown",
+        (e) => {
+
+            e.stopPropagation();
+
+            resizing = true;
+
+        }
+    );
+
+    document.addEventListener(
+        "mousemove",
+        (e) => {
+
+            if(!resizing) return;
+
+            const rect =
+            wrapper.getBoundingClientRect();
+
+            const width =
+            e.clientX - rect.left;
+
+            const height =
+            e.clientY - rect.top;
+
+            wrapper.style.width =
+            width + "px";
+
+            wrapper.style.height =
+            height + "px";
+
+            canvas.width = width;
+            canvas.height = height;
+
+        }
+    );
+
+    document.addEventListener(
+        "mouseup",
+        () => {
+
+            resizing = false;
+
+        }
+    );
+
+}
+
+/* =========================
+   /DRAW DETECTION
+========================= */
+
+editor.addEventListener(
+    "input",
+    () => {
+
+        const text =
+        editor.innerText;
+
+        if(text.includes("/draw")){
+
+            editor.innerHTML =
+            editor.innerHTML.replace(
+                "/draw",
+                ""
+            );
+
+            insertDrawBlock();
+
+        }
+
+    }
+);
+
 /* =========================
    START APP
 ========================= */
