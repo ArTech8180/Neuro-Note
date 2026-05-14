@@ -34,6 +34,9 @@ document.getElementById("searchInput");
 const imageInput =
 document.getElementById("imageInput");
 
+const contextMenu =
+document.getElementById("contextMenu");
+
 const textColorPicker =
 document.getElementById("textColorPicker");
 
@@ -127,6 +130,55 @@ function showToast(message){
         toast.remove();
 
     }, 3000);
+
+}
+
+/* =========================
+   SAVE STATUS
+========================= */
+
+function showSaveStatus(message){
+
+    let status =
+    document.getElementById(
+        "saveStatus"
+    );
+
+    if(!status){
+
+        status =
+        document.createElement("div");
+
+        status.id = "saveStatus";
+
+        status.style.position = "fixed";
+        status.style.bottom = "20px";
+        status.style.right = "20px";
+        status.style.padding = "10px 16px";
+        status.style.background =
+        "rgba(0,0,0,0.8)";
+        status.style.color = "white";
+        status.style.borderRadius = "12px";
+        status.style.fontSize = "14px";
+        status.style.zIndex = "9999";
+
+        document.body.appendChild(
+            status
+        );
+
+    }
+
+    status.innerText = message;
+
+    status.style.opacity = "1";
+
+    clearTimeout(status.hideTimer);
+
+    status.hideTimer = setTimeout(() => {
+
+        status.style.opacity = "0";
+
+    }, 1500);
 
 }
 
@@ -245,6 +297,68 @@ textColorPicker.addEventListener(
 
     }
 );
+
+/* =========================
+   INSERT BLOCK
+========================= */
+
+function insertBlock(type){
+
+    if(type === "draw"){
+
+        insertDrawBlock();
+
+    }
+
+    else if(type === "heading"){
+
+        const heading =
+        document.createElement("h1");
+
+        heading.innerText =
+        "Heading";
+
+        editor.appendChild(heading);
+
+    }
+
+    else if(type === "quote"){
+
+        const quote =
+        document.createElement("blockquote");
+
+        quote.innerText =
+        "Quote here...";
+
+        editor.appendChild(quote);
+
+    }
+
+    else if(type === "code"){
+
+        const pre =
+        document.createElement("pre");
+
+        pre.innerText =
+        "Code here...";
+
+        editor.appendChild(pre);
+
+    }
+
+    else if(type === "divider"){
+
+        const hr =
+        document.createElement("hr");
+
+        editor.appendChild(hr);
+
+    }
+
+    slashMenu.style.display =
+    "none";
+
+}
 
 /* =========================
    BOOK RENDER
@@ -831,8 +945,8 @@ editor.addEventListener(
 
             saveData();
 
-            showToast(
-                "💾 Saved"
+            showSaveStatus(
+                "Saved"
             );
 
         }, 1000);
@@ -891,548 +1005,114 @@ imageInput.addEventListener(
 
 function insertImage(src){
 
-    const img =
-    document.createElement("img");
-
-    img.src = src;
-
-    img.classList.add(
-        "note-image"
-    );
-
-    editor.appendChild(img);
-
-    const spacer =
-    document.createElement("p");
-
-    spacer.innerHTML = "<br>";
-
-    editor.appendChild(spacer);
-
-}
-
-/* =========================
-   TABLE SYSTEM
-========================= */
-
-function openTablePopup(){
-
-    tablePopup.classList.add(
-        "show"
-    );
-
-}
-
-function closeTablePopup(){
-
-    tablePopup.classList.remove(
-        "show"
-    );
-
-}
-
-function createTable(){
-
-    const rows =
-    parseInt(
-        document.getElementById(
-            "rowsInput"
-        ).value
-    );
-
-    const cols =
-    parseInt(
-        document.getElementById(
-            "colsInput"
-        ).value
-    );
-
-    let tableHTML =
-    "<table>";
-
-    for(let i = 0; i < rows; i++){
-
-        tableHTML += "<tr>";
-
-        for(let j = 0; j < cols; j++){
-
-            tableHTML += `
-                <td contenteditable="true">
-                    Cell
-                </td>
-            `;
-
-        }
-
-        tableHTML += "</tr>";
-
-    }
-
-    tableHTML += "</table>";
-
-    editor.innerHTML +=
-    tableHTML;
-
-    closeTablePopup();
-
-}
-
-
-/* =========================
-   EXPORT SYSTEM
-========================= */
-
-function getBookText(book){
-
-    let text = "";
-
-    text += book.title + "\n\n";
-
-    book.chapters.forEach(chapter => {
-
-        text +=
-        chapter.title + "\n\n";
-
-        chapter.pages.forEach(page => {
-
-            const temp =
-            document.createElement("div");
-
-            temp.innerHTML =
-            page.content;
-
-            text +=
-            page.title + "\n";
-
-            text +=
-            temp.innerText + "\n\n";
-
-        });
-
-    });
-
-    return text;
-
-}
-
-function selectBook(){
-
-    if(books.length === 0){
-
-        alert(
-            "No books available."
-        );
-
-        return null;
-
-    }
-
-    const names =
-    books.map(
-        (b, i) =>
-        `${i+1}. ${b.title}`
-    ).join("\n");
-
-    const choice =
-    prompt(
-        "Select Book:\n\n" + names
-    );
-
-    const index =
-    parseInt(choice) - 1;
-
-    if(
-        index < 0
-        ||
-        index >= books.length
-    ){
-
-        alert(
-            "Invalid Selection"
-        );
-
-        return null;
-
-    }
-
-    return books[index];
-
-}
-
-/* TXT */
-
-function exportBookTXT(){
-
-    const book =
-    selectBook();
-
-    if(!book) return;
-
-    const text =
-    getBookText(book);
-
-    const blob =
-    new Blob(
-        [text],
-        {
-            type: "text/plain"
-        }
-    );
-
-    saveAs(
-        blob,
-        `${book.title}.txt`
-    );
-
-}
-
-/* PDF */
-
-async function exportBookPDF(){
-
-    const book =
-    selectBook();
-
-    if(!book) return;
-
-    const exportDiv =
+    const block =
     document.createElement("div");
 
-    exportDiv.style.padding =
-    "40px";
-
-    exportDiv.style.background =
-    "white";
-
-    exportDiv.style.color =
-    "black";
-
-    exportDiv.innerHTML =
-    `<h1>${book.title}</h1>`;
-
-    book.chapters.forEach(chapter => {
-
-        exportDiv.innerHTML +=
-        `<h2>${chapter.title}</h2>`;
-
-        chapter.pages.forEach(page => {
-
-            exportDiv.innerHTML +=
-            `<h3>${page.title}</h3>`;
-
-            exportDiv.innerHTML +=
-            page.content;
-
-        });
-
-    });
-
-    document.body.appendChild(
-        exportDiv
+    block.classList.add(
+        "image-block"
     );
 
-    const canvas =
-    await html2canvas(exportDiv);
+    block.contentEditable =
+    false;
 
-    const imgData =
-    canvas.toDataURL("image/png");
+    block.innerHTML = `
 
-    const { jsPDF } =
-    window.jspdf;
+        <div class="image-tools">
 
-    const pdf =
-    new jsPDF();
+            <div class="drag-handle">
+                ⠿ Drag
+            </div>
 
-    pdf.addImage(
-        imgData,
-        "PNG",
-        10,
-        10,
-        190,
-        0
-    );
+            <button
+                onclick="deleteImage(this)">
 
-    pdf.save(
-        `${book.title}.pdf`
-    );
+                Delete
 
-    exportDiv.remove();
+            </button>
+
+        </div>
+
+        <div class="image-wrapper">
+
+            <img src="${src}">
+
+            <div class="resize-handle"></div>
+
+        </div>
+
+    `;
+
+    editor.appendChild(block);
+
+    enableDragging(block);
+
+    enableImageResize(block);
 
 }
 
-/* DOCX */
+function enableImageResize(block){
 
-async function exportBookDOCX(){
-
-    const book =
-    selectBook();
-
-    if(!book) return;
-
-    const text =
-    getBookText(book);
-
-    const doc =
-    new docx.Document({
-
-        sections: [
-
-            {
-                properties: {},
-
-                children: [
-
-                    new docx.Paragraph({
-                        text: text
-                    })
-
-                ]
-            }
-
-        ]
-
-    });
-
-    const blob =
-    await docx.Packer.toBlob(doc);
-
-    saveAs(
-        blob,
-        `${book.title}.docx`
+    const handle =
+    block.querySelector(
+        ".resize-handle"
     );
 
-}
-
-/* =========================
-   EXPORT MENU
-========================= */
-
-function toggleExportMenu(){
-
-    const menu =
-    document.getElementById(
-        "exportMenu"
+    const wrapper =
+    block.querySelector(
+        ".image-wrapper"
     );
 
-    menu.classList.toggle(
-        "show"
-    );
+    let resizing = false;
 
-}
+    handle.addEventListener(
+        "mousedown",
+        () => {
 
-document.addEventListener(
-    "click",
-    (e) => {
-
-        const menu =
-        document.getElementById(
-            "exportMenu"
-        );
-
-        const button =
-        document.querySelector(
-            ".export-main-btn"
-        );
-
-        if(
-            menu &&
-            button &&
-            !menu.contains(e.target)
-            &&
-            !button.contains(e.target)
-        ){
-
-            menu.classList.remove(
-                "show"
-            );
+            resizing = true;
 
         }
-
-    }
-);
-
-/* =========================
-   AI SIDEBAR
-========================= */
-
-function toggleAI(){
-
-    document
-    .getElementById(
-        "aiSidebar"
-    )
-    .classList.toggle(
-        "show"
     );
 
-}
+    document.addEventListener(
+        "mousemove",
+        (e) => {
 
-function sendAIMessage(){
+            if(!resizing) return;
 
-    const input =
-    document.getElementById(
-        "aiInput"
-    );
+            const rect =
+            wrapper.getBoundingClientRect();
 
-    const messages =
-    document.getElementById(
-        "aiMessages"
-    );
-
-    if(
-        input.value.trim() === ""
-    ) return;
-
-    const userMessage =
-    document.createElement("div");
-
-    userMessage.classList.add(
-        "ai-message"
-    );
-
-    userMessage.innerHTML =
-    "🧠 " + input.value;
-
-    messages.appendChild(
-        userMessage
-    );
-
-    setTimeout(() => {
-
-        const aiReply =
-        document.createElement("div");
-
-        aiReply.classList.add(
-            "ai-message"
-        );
-
-        aiReply.innerHTML =
-        "AI response generated.";
-
-        messages.appendChild(
-            aiReply
-        );
-
-        messages.scrollTop =
-        messages.scrollHeight;
-
-    }, 500);
-
-    input.value = "";
-
-}
-
-/* =========================
-   COMMAND PALETTE
-========================= */
-
-document.addEventListener(
-    "keydown",
-    (e) => {
-
-        if(
-            e.ctrlKey
-            &&
-            e.key.toLowerCase() === "k"
-        ){
-
-            e.preventDefault();
-
-            commandPalette.classList.add(
-                "show"
-            );
-
-            commandInput.focus();
+            wrapper.style.width =
+            e.clientX - rect.left + "px";
 
         }
+    );
 
-        if(
-            e.ctrlKey
-            &&
-            e.key.toLowerCase() === "s"
-        ){
+    document.addEventListener(
+        "mouseup",
+        () => {
 
-            e.preventDefault();
-
-            saveData();
-
-            showToast(
-                "💾 Saved"
-            );
+            resizing = false;
 
         }
-
-    }
-);
-
-function runCommand(command){
-
-    commandPalette.classList.remove(
-        "show"
-    );
-
-    if(command === "new-book"){
-
-        newBookBtn.click();
-
-    }
-
-    if(command === "toggle-ai"){
-
-        toggleAI();
-
-    }
-
-    if(command === "dark-theme"){
-
-        setTheme("dark-theme");
-
-    }
-
-    if(command === "light-theme"){
-
-        setTheme("light-theme");
-
-    }
-
-}
-
-/* =========================
-   HELP PANEL
-========================= */
-
-function openHelpPanel(){
-
-    document
-    .getElementById("helpPanel")
-    .classList.add("show");
-
-}
-
-function closeHelpPanel(){
-
-    document
-    .getElementById("helpPanel")
-    .classList.remove("show");
-
-}
-
-/* =========================
-   THEME DROPDOWN
-========================= */
-
-function toggleThemeDropdown(){
-
-    document
-    .getElementById(
-        "themeDropdownContent"
-    )
-    .classList.toggle(
-        "show"
     );
 
 }
 
+function deleteImage(button){
+
+    const block =
+    button.closest(
+        ".image-block"
+    );
+
+    if(block){
+
+        block.remove();
+
+    }
+
+}
 
 /* =========================
    INSERT DRAW BLOCK
@@ -1484,7 +1164,7 @@ function insertDrawBlock(){
             <input
                 type="color"
                 value="#ffffff"
-                onchange="setColor('${canvasId}', this.value)"
+                oninput="setColor('${canvasId}', this.value)"
             >
 
             <button onclick="clearBlockCanvas('${canvasId}')">
@@ -1512,11 +1192,15 @@ function insertDrawBlock(){
 
     editor.appendChild(block);
 
-    setupCanvas(canvasId);
+    setTimeout(() => {
 
-    enableDragging(block);
+        setupCanvas(canvasId);
 
-    enableResize(block);
+        enableDragging(block);
+
+        enableResize(block);
+
+    }, 50);
 
 }
 
@@ -1532,8 +1216,50 @@ function setupCanvas(canvasId){
     const ctx =
     canvas.getContext("2d");
 
-    canvas.width = 700;
-    canvas.height = 400;
+    function resizeCanvas(){
+
+        const rect =
+        canvas.getBoundingClientRect();
+
+        let imageData;
+
+        try{
+
+            imageData =
+            ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+        }
+
+        catch{
+
+            imageData = null;
+
+        }
+
+        canvas.width =
+        rect.width;
+
+        canvas.height =
+        rect.height;
+
+        if(imageData){
+
+            ctx.putImageData(
+                imageData,
+                0,
+                0
+            );
+
+        }
+
+    }
+
+    resizeCanvas();
 
     canvasData[canvasId] = {
 
@@ -1554,10 +1280,19 @@ function setupCanvas(canvasId){
         const rect =
         canvas.getBoundingClientRect();
 
+        const scaleX =
+        canvas.width / rect.width;
+
+        const scaleY =
+        canvas.height / rect.height;
+
         return {
 
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x:
+            (e.clientX - rect.left) * scaleX,
+
+            y:
+            (e.clientY - rect.top) * scaleY
 
         };
 
@@ -1583,12 +1318,23 @@ function setupCanvas(canvasId){
                 canvas.height
             );
 
-            ctx.beginPath();
+            const tool =
+            canvasData[canvasId].tool;
 
-            ctx.moveTo(
-                startX,
-                startY
-            );
+            if(
+                tool === "pen"
+                ||
+                tool === "eraser"
+            ){
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    startX,
+                    startY
+                );
+
+            }
 
         }
     );
@@ -1609,7 +1355,9 @@ function setupCanvas(canvasId){
             getMousePos(e);
 
             ctx.strokeStyle = color;
+
             ctx.lineWidth = 3;
+
             ctx.lineCap = "round";
 
             if(tool === "pen"){
@@ -1704,13 +1452,25 @@ function setupCanvas(canvasId){
         }
     );
 
+    function stopDrawing(){
+
+        drawing = false;
+
+    }
+
     canvas.addEventListener(
         "mouseup",
-        () => {
+        stopDrawing
+    );
 
-            drawing = false;
+    canvas.addEventListener(
+        "mouseleave",
+        stopDrawing
+    );
 
-        }
+    window.addEventListener(
+        "resize",
+        resizeCanvas
     );
 
 }
@@ -1855,11 +1615,16 @@ function enableResize(block){
         ".draw-canvas"
     );
 
+    const ctx =
+    canvas.getContext("2d");
+
     let resizing = false;
 
     handle.addEventListener(
         "mousedown",
         (e) => {
+
+            e.preventDefault();
 
             e.stopPropagation();
 
@@ -1877,11 +1642,41 @@ function enableResize(block){
             const rect =
             wrapper.getBoundingClientRect();
 
-            const width =
+            let width =
             e.clientX - rect.left;
 
-            const height =
+            let height =
             e.clientY - rect.top;
+
+            width = Math.max(
+                width,
+                300
+            );
+
+            height = Math.max(
+                height,
+                200
+            );
+
+            let imageData;
+
+            try{
+
+                imageData =
+                ctx.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+            }
+
+            catch{
+
+                imageData = null;
+
+            }
 
             wrapper.style.width =
             width + "px";
@@ -1890,7 +1685,18 @@ function enableResize(block){
             height + "px";
 
             canvas.width = width;
+
             canvas.height = height;
+
+            if(imageData){
+
+                ctx.putImageData(
+                    imageData,
+                    0,
+                    0
+                );
+
+            }
 
         }
     );
@@ -1905,6 +1711,130 @@ function enableResize(block){
     );
 
 }
+
+/* =========================
+   TABLE SYSTEM
+========================= */
+
+function openTablePopup(){
+
+    tablePopup.classList.add(
+        "show"
+    );
+
+}
+
+function closeTablePopup(){
+
+    tablePopup.classList.remove(
+        "show"
+    );
+
+}
+
+function createTable(){
+
+    const rows =
+    parseInt(
+        document.getElementById(
+            "rowsInput"
+        ).value
+    );
+
+    const cols =
+    parseInt(
+        document.getElementById(
+            "colsInput"
+        ).value
+    );
+
+    const wrapper =
+    document.createElement("div");
+
+    wrapper.classList.add(
+        "table-wrapper"
+    );
+
+    let html = `
+
+        <button
+            class="remove-table-btn"
+            onclick="removeTable(this)">
+
+            Remove Table
+
+        </button>
+
+        <table>
+
+    `;
+
+    for(let i = 0; i < rows; i++){
+
+        html += "<tr>";
+
+        for(let j = 0; j < cols; j++){
+
+            html += `
+                <td contenteditable="true">
+                    Cell
+                </td>
+            `;
+
+        }
+
+        html += "</tr>";
+
+    }
+
+    html += "</table>";
+
+    wrapper.innerHTML = html;
+
+    editor.appendChild(wrapper);
+
+    closeTablePopup();
+
+}
+
+function removeTable(button){
+
+    const wrapper =
+    button.closest(
+        ".table-wrapper"
+    );
+
+    if(wrapper){
+
+        wrapper.remove();
+
+    }
+
+}
+
+/* =========================
+   SLASH MENU
+========================= */
+
+editor.addEventListener(
+    "keyup",
+    (e) => {
+
+        if(e.key === "/"){
+
+            slashMenu.style.display =
+            "block";
+
+            slashMenu.style.left =
+            e.pageX + "px";
+
+            slashMenu.style.top =
+            e.pageY + "px";
+
+        }
+
+    }
+);
 
 /* =========================
    /DRAW DETECTION
@@ -1931,6 +1861,213 @@ editor.addEventListener(
 
     }
 );
+
+/* =========================
+   RIGHT CLICK MENU
+========================= */
+
+editor.addEventListener(
+    "contextmenu",
+    (e) => {
+
+        e.preventDefault();
+
+        contextMenu.style.display =
+        "block";
+
+        contextMenu.style.left =
+        e.pageX + "px";
+
+        contextMenu.style.top =
+        e.pageY + "px";
+
+    }
+);
+
+document.addEventListener(
+    "click",
+    (e) => {
+
+        if(
+            contextMenu &&
+            !contextMenu.contains(e.target)
+        ){
+
+            contextMenu.style.display =
+            "none";
+
+        }
+
+    }
+);
+
+/* =========================
+   COPY CUT PASTE
+========================= */
+
+async function copyText(){
+
+    const selectedText =
+    window.getSelection().toString();
+
+    if(selectedText){
+
+        await navigator.clipboard.writeText(
+            selectedText
+        );
+
+    }
+
+}
+
+async function cutText(){
+
+    const selection =
+    window.getSelection();
+
+    const selectedText =
+    selection.toString();
+
+    if(selectedText){
+
+        await navigator.clipboard.writeText(
+            selectedText
+        );
+
+        document.execCommand("delete");
+
+    }
+
+}
+
+async function pasteText(){
+
+    const text =
+    await navigator.clipboard.readText();
+
+    document.execCommand(
+        "insertText",
+        false,
+        text
+    );
+
+}
+
+/* =========================
+   COMMAND PALETTE
+========================= */
+
+document.addEventListener(
+    "keydown",
+    (e) => {
+
+        if(
+            e.ctrlKey
+            &&
+            e.key.toLowerCase() === "k"
+        ){
+
+            e.preventDefault();
+
+            commandPalette.classList.add(
+                "show"
+            );
+
+            commandInput.focus();
+
+        }
+
+        if(
+            e.ctrlKey
+            &&
+            e.key.toLowerCase() === "s"
+        ){
+
+            e.preventDefault();
+
+            saveData();
+
+            showToast(
+                "💾 Saved"
+            );
+
+        }
+
+    }
+);
+
+function runCommand(command){
+
+    commandPalette.classList.remove(
+        "show"
+    );
+
+    if(command === "new-book"){
+
+        newBookBtn.click();
+
+    }
+
+    if(command === "new-chapter"){
+
+        if(books.length > 0){
+
+            addChapter(0);
+
+        }
+
+    }
+
+    if(command === "new-page"){
+
+        if(
+            books.length > 0
+            &&
+            books[0].chapters.length > 0
+        ){
+
+            addPage(0,0);
+
+        }
+
+    }
+
+    if(command === "insert-draw"){
+
+        insertDrawBlock();
+
+    }
+
+    if(command === "dark-theme"){
+
+        setTheme("dark-theme");
+
+    }
+
+    if(command === "light-theme"){
+
+        setTheme("light-theme");
+
+    }
+
+}
+
+/* =========================
+   EXPORT MENU
+========================= */
+
+function toggleExportMenu(){
+
+    const menu =
+    document.getElementById(
+        "exportMenu"
+    );
+
+    menu.classList.toggle(
+        "show"
+    );
+
+}
 
 /* =========================
    START APP
