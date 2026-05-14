@@ -2053,6 +2053,191 @@ function runCommand(command){
 }
 
 /* =========================
+   AI SIDEBAR
+========================= */
+
+function toggleAI(){
+
+    const aiSidebar =
+    document.getElementById(
+        "aiSidebar"
+    );
+
+    if(aiSidebar){
+
+        aiSidebar.classList.toggle(
+            "show"
+        );
+
+    }
+
+}
+
+function sendAIMessage(){
+
+    const input =
+    document.getElementById(
+        "aiInput"
+    );
+
+    const messages =
+    document.getElementById(
+        "aiMessages"
+    );
+
+    if(
+        !input
+        ||
+        !messages
+        ||
+        input.value.trim() === ""
+    ) return;
+
+    const userMessage =
+    document.createElement(
+        "div"
+    );
+
+    userMessage.classList.add(
+        "ai-message"
+    );
+
+    userMessage.innerHTML =
+    "🧠 " + input.value;
+
+    messages.appendChild(
+        userMessage
+    );
+
+    setTimeout(() => {
+
+        const aiReply =
+        document.createElement(
+            "div"
+        );
+
+        aiReply.classList.add(
+            "ai-message"
+        );
+
+        aiReply.innerHTML =
+        generateFakeAIResponse(
+            input.value
+        );
+
+        messages.appendChild(
+            aiReply
+        );
+
+        messages.scrollTop =
+        messages.scrollHeight;
+
+    }, 500);
+
+    input.value = "";
+
+}
+
+/* =========================
+   FAKE AI RESPONSE
+========================= */
+
+function generateFakeAIResponse(message){
+
+    message =
+    message.toLowerCase();
+
+    if(message.includes("hello")){
+
+        return "Hello 👋";
+
+    }
+
+    if(message.includes("summarize")){
+
+        return "This note discusses important concepts and key ideas.";
+
+    }
+
+    if(message.includes("quiz")){
+
+        return `
+        1. What is photosynthesis?
+        2. Define gravity.
+        `;
+
+    }
+
+    if(message.includes("explain")){
+
+        return "Here is a simplified explanation of the topic.";
+
+    }
+
+    return "AI response generated.";
+
+}
+
+/* =========================
+   HELP PANEL
+========================= */
+
+function openHelpPanel(){
+
+    const helpPanel =
+    document.getElementById(
+        "helpPanel"
+    );
+
+    if(helpPanel){
+
+        helpPanel.classList.add(
+            "show"
+        );
+
+    }
+
+}
+
+function closeHelpPanel(){
+
+    const helpPanel =
+    document.getElementById(
+        "helpPanel"
+    );
+
+    if(helpPanel){
+
+        helpPanel.classList.remove(
+            "show"
+        );
+
+    }
+
+}
+
+/* =========================
+   THEME DROPDOWN
+========================= */
+
+function toggleThemeDropdown(){
+
+    const dropdown =
+    document.getElementById(
+        "themeDropdownContent"
+    );
+
+    if(dropdown){
+
+        dropdown.classList.toggle(
+            "show"
+        );
+
+    }
+
+}
+
+/* =========================
    EXPORT MENU
 ========================= */
 
