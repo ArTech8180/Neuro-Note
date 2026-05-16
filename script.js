@@ -1,3 +1,13 @@
+console.log("DOCX:", typeof docx);
+console.log("saveAs:", typeof saveAs);
+console.log("html2canvas:", typeof html2canvas);
+console.log("jsPDF:", typeof window.jspdf);
+console.log("Mammoth:", typeof mammoth);
+console.log(mammoth);
+
+
+
+
 /* =========================
    ELEMENTS
 ========================= */
@@ -298,6 +308,68 @@ textColorPicker.addEventListener(
     }
 );
 
+
+/* =========================
+   HIGHLIGHT TEXT
+========================= */
+
+let highlightEnabled = false;
+
+function toggleHighlight(){
+
+    highlightEnabled =
+    !highlightEnabled;
+
+    if(highlightEnabled){
+
+        document.execCommand(
+            "styleWithCSS",
+            false,
+            true
+        );
+
+        document.execCommand(
+            "hiliteColor",
+            false,
+            "rgba(255, 241, 118, 0.45)"
+        );
+
+        showToast(
+            "Highlight Enabled"
+        );
+
+    }else{
+
+        document.execCommand(
+            "removeFormat",
+            false,
+            null
+        );
+
+        showToast(
+            "Highlight Disabled"
+        );
+
+    }
+
+}
+
+/* =========================
+   TEXT SIZE
+========================= */
+
+function changeTextSize(size){
+
+    document.execCommand(
+        "fontSize",
+        false,
+        size
+    );
+
+}
+
+
+
 /* =========================
    INSERT BLOCK
 ========================= */
@@ -446,9 +518,12 @@ function renderBooks(){
 
                         <div class="page-row">
 
-                            <span>
-                                📄 ${page.title}
-                            </span>
+                            <div class="page-title-area">
+                                <span> 📄 ${page.title} </span>
+                                <button class="rename-btn" onclick=" event.stopPropagation(); renamePage( ${bookIndex}, ${chapterIndex}, ${pageIndex} ) ">
+                                    ✏️
+                                </button>
+                            </div>
 
                             <button
                                 class="delete-btn"
@@ -2053,27 +2128,49 @@ function runCommand(command){
 }
 
 /* =========================
-   AI SIDEBAR
+   OPEN AI CHAT
 ========================= */
 
 function toggleAI(){
 
-    const aiSidebar =
-    document.getElementById(
-        "aiSidebar"
-    );
+    if(!aiMode){
 
-    if(aiSidebar){
-
-        aiSidebar.classList.toggle(
-            "show"
+        showToast(
+            "Enable AI Mode"
         );
+
+        return;
 
     }
 
+    document
+    .getElementById(
+        "aiSidebar"
+    )
+    .classList.toggle(
+        "show"
+    );
+
 }
 
-function sendAIMessage(){
+/* =========================
+   GEMINI AI CHAT
+========================= */
+
+const GEMINI_API_KEY =
+"AIzaSyA_0vgF7xzpNg9CNiToJrR46H8skQdz5Wc";
+
+async function sendAIMessage(){
+
+    if(!aiMode){
+
+        showToast(
+            "Enable AI Mode"
+        );
+
+        return;
+
+    }
 
     const input =
     document.getElementById(
@@ -2085,45 +2182,147 @@ function sendAIMessage(){
         "aiMessages"
     );
 
-    if(
-        !input
-        ||
-        !messages
-        ||
-        input.value.trim() === ""
-    ) return;
+    const userText =
+    input.value.trim();
+
+    if(userText === "") return;
+
+    /* USER MESSAGE */
 
     const userMessage =
-    document.createElement(
-        "div"
-    );
+    document.createElement("div");
 
     userMessage.classList.add(
         "ai-message"
     );
 
     userMessage.innerHTML =
-    "🧠 " + input.value;
+    "🧠 " + userText;
 
     messages.appendChild(
         userMessage
     );
 
-    setTimeout(() => {
+    input.value = "";
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+    /* LOADING MESSAGE */
+
+    const loading =
+    document.createElement("div");
+
+    loading.classList.add(
+        "ai-message"
+    );
+
+    loading.innerHTML =
+    "Thinking...";
+
+    messages.appendChild(
+        loading
+    );
+
+    try{
+
+        const response =
+        await fetch(
+
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+
+            {
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body:JSON.stringify({
+
+                    contents:[
+
+                        {
+                            parts:[
+                                {
+                                    text:userText
+                                }
+                            ]
+                        }
+
+                    ]
+
+                })
+
+            }
+
+        );
+
+        const data =
+        await response.json();
+
+        loading.remove();
+
+    let aiText = "";
+
+    if(
+        data.candidates
+        &&
+        data.candidates.length > 0
+    ){
+
+        aiText =
+
+        data.candidates[0]
+        .content.parts[0]
+        .text;
+
+    }
+    else if(data.error){
+
+        aiText =
+        "❌ " + data.error.message;
+
+    }
+    else{
+
+        aiText =
+        "No response from AI.";
+
+    }
+
+    if(
+        aiText.includes("quota")
+        ||
+        aiText.includes("Quota")
+    ){
+
+        aiText = `
+        🚀 Free AI limit reached.
+
+        Upgrade to NeuroNote AI+
+        for unlimited smart features.
+
+        Subscription:
+        ₹30/month
+        `;
+
+        showSubscriptionPopup();
+
+    }
+
 
         const aiReply =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
         aiReply.classList.add(
             "ai-message"
         );
 
         aiReply.innerHTML =
-        generateFakeAIResponse(
-            input.value
-        );
+        "🤖 " + aiText;
 
         messages.appendChild(
             aiReply
@@ -2132,49 +2331,16 @@ function sendAIMessage(){
         messages.scrollTop =
         messages.scrollHeight;
 
-    }, 500);
-
-    input.value = "";
-
-}
-
-/* =========================
-   FAKE AI RESPONSE
-========================= */
-
-function generateFakeAIResponse(message){
-
-    message =
-    message.toLowerCase();
-
-    if(message.includes("hello")){
-
-        return "Hello 👋";
-
     }
 
-    if(message.includes("summarize")){
+    catch(error){
 
-        return "This note discusses important concepts and key ideas.";
+        loading.innerHTML =
+        "AI Error";
 
-    }
-
-    if(message.includes("quiz")){
-
-        return `
-        1. What is photosynthesis?
-        2. Define gravity.
-        `;
+        console.error(error);
 
     }
-
-    if(message.includes("explain")){
-
-        return "Here is a simplified explanation of the topic.";
-
-    }
-
-    return "AI response generated.";
 
 }
 
@@ -2238,6 +2404,102 @@ function toggleThemeDropdown(){
 }
 
 /* =========================
+   SELECT BOOK
+========================= */
+
+function selectBook(){
+
+    if(books.length === 0){
+
+        alert("No books available.");
+
+        return null;
+
+    }
+
+    const bookNames =
+    books.map(
+        (b, i) => `${i + 1}. ${b.title}`
+    ).join("\n");
+
+    const choice = prompt(
+        "Select Book Number:\n\n" + bookNames
+    );
+
+    if(choice === null){
+
+        return null;
+
+    }
+
+    const index =
+    parseInt(choice) - 1;
+
+    if(
+        index < 0 ||
+        index >= books.length
+    ){
+
+        alert("Invalid selection.");
+
+        return null;
+
+    }
+
+    return books[index];
+
+}
+
+
+/* =========================
+   GET FULL BOOK CONTENT
+========================= */
+
+function getBookText(book){
+
+    let text = "";
+
+    text += book.title + "\n\n";
+
+    book.chapters.forEach(chapter => {
+
+        text +=
+        "====================\n";
+
+        text +=
+        chapter.title + "\n";
+
+        text +=
+        "====================\n\n";
+
+        chapter.pages.forEach(page => {
+
+            text +=
+            "--- " +
+            page.title +
+            " ---\n\n";
+
+            const tempDiv =
+            document.createElement("div");
+
+            tempDiv.innerHTML =
+            page.content;
+
+            text +=
+            tempDiv.innerText +
+            "\n\n";
+
+        });
+
+    });
+
+    return text;
+
+}
+
+
+
+/* =========================
    EXPORT MENU
 ========================= */
 
@@ -2255,6 +2517,467 @@ function toggleExportMenu(){
 }
 
 /* =========================
+   EXPORT DOCX
+========================= */
+
+async function exportBookDOCX(){
+
+    const book = selectBook();
+
+    if(!book) return;
+
+    const text = getBookText(book);
+
+    const doc = new docx.Document({
+
+        sections: [
+            {
+                properties: {},
+                children: [
+
+                    new docx.Paragraph({
+                        text: text
+                    })
+
+                ]
+            }
+        ]
+
+    });
+
+    const blob =
+    await docx.Packer.toBlob(doc);
+
+    saveAs(
+        blob,
+        `${book.title}.docx`
+    );
+
+    showToast("📘 DOCX Exported");
+
+}
+
+function exportBookTXT(){
+
+    const book = selectBook();
+
+    if(!book) return;
+
+    const text = getBookText(book);
+
+    const blob = new Blob(
+        [text],
+        { type: "text/plain" }
+    );
+
+    saveAs(
+        blob,
+        `${book.title}.txt`
+    );
+
+    showToast("📄 TXT Exported");
+
+}
+
+async function exportBookPDF(){
+
+    const book = selectBook();
+
+    if(!book) return;
+
+    const exportDiv =
+    document.createElement("div");
+
+    exportDiv.style.padding = "40px";
+    exportDiv.style.background = "white";
+    exportDiv.style.color = "black";
+
+    exportDiv.innerHTML =
+    `<h1>${book.title}</h1>`;
+
+    book.chapters.forEach(chapter => {
+
+        exportDiv.innerHTML +=
+        `<h2>${chapter.title}</h2>`;
+
+        chapter.pages.forEach(page => {
+
+            exportDiv.innerHTML +=
+            `<h3>${page.title}</h3>`;
+
+            exportDiv.innerHTML +=
+            page.content;
+
+        });
+
+    });
+
+    document.body.appendChild(exportDiv);
+
+    const canvas =
+    await html2canvas(exportDiv);
+
+    const imgData =
+    canvas.toDataURL("image/png");
+
+    const { jsPDF } = window.jspdf;
+
+    const pdf =
+    new jsPDF();
+
+    pdf.addImage(
+        imgData,
+        "PNG",
+        0,
+        0,
+        210,
+        297
+    );
+
+    pdf.save(`${book.title}.pdf`);
+
+    exportDiv.remove();
+
+    showToast("📕 PDF Exported");
+
+}
+
+/* =========================
+   IMPORT MENU
+========================= */
+
+function toggleImportMenu(){
+
+    document
+    .getElementById("importMenu")
+    .classList.toggle("show");
+
+}
+
+/* =========================
+   CLOSE EXPORT & IMPORT MENUS
+========================= */
+
+document.addEventListener(
+    "click",
+    (e) => {
+
+        /* EXPORT MENU */
+
+        const exportMenu =
+        document.getElementById(
+            "exportMenu"
+        );
+
+        const exportButton =
+        document.querySelector(
+            ".export-main-btn"
+        );
+
+        if(
+            exportMenu &&
+            exportButton &&
+            !exportMenu.contains(e.target)
+            &&
+            !exportButton.contains(e.target)
+        ){
+
+            exportMenu.classList.remove(
+                "show"
+            );
+
+        }
+
+        /* IMPORT MENU */
+
+        const importMenu =
+        document.getElementById(
+            "importMenu"
+        );
+
+        const importButton =
+        document.querySelector(
+            ".import-main-btn"
+        );
+
+        if(
+            importMenu &&
+            importButton &&
+            !importMenu.contains(e.target)
+            &&
+            !importButton.contains(e.target)
+        ){
+
+            importMenu.classList.remove(
+                "show"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================
+   IMPORT TXT
+========================= */
+
+function importTXT(){
+
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = ".txt";
+
+    input.onchange = e => {
+
+        const file = e.target.files[0];
+
+        if(!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function(event){
+
+            editor.innerText = event.target.result;
+
+            showToast("TXT Imported");
+
+        };
+
+        reader.readAsText(file);
+
+    };
+
+    input.click();
+
+}
+
+/* =========================
+   IMPORT DOCX
+========================= */
+
+async function importDOCX(){
+
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = ".docx";
+
+    input.onchange = async e => {
+
+        const file = e.target.files[0];
+
+        if(!file) return;
+
+        const arrayBuffer = await file.arrayBuffer();
+
+        mammoth.extractRawText({ arrayBuffer })
+        .then(result => {
+
+            editor.innerText = result.value;
+
+            showToast("DOCX Imported");
+
+        })
+        .catch(err => {
+
+            console.error(err);
+
+            showToast("DOCX Import Failed");
+
+        });
+
+    };
+
+    input.click();
+
+}
+
+/* =========================
+   IMPORT PDF
+========================= */
+
+async function importPDF(){
+
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = ".pdf";
+
+    input.onchange = async e => {
+
+        const file = e.target.files[0];
+
+        if(!file) return;
+
+        const arrayBuffer = await file.arrayBuffer();
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let fullText = "";
+
+        for(let i = 1; i <= pdf.numPages; i++){
+
+            const page = await pdf.getPage(i);
+
+            const textContent = await page.getTextContent();
+
+            const text = textContent.items
+                .map(item => item.str)
+                .join(" ");
+
+            fullText += text + "\n\n";
+
+        }
+
+        editor.innerText = fullText;
+
+        showToast("PDF Imported");
+
+    };
+
+    input.click();
+
+}
+
+/* =========================
+   RENAME PAGE
+========================= */
+
+function renamePage(
+    bookIndex,
+    chapterIndex,
+    pageIndex
+){
+
+    const newName =
+    prompt(
+        "Enter New Page Name"
+    );
+
+    if(!newName) return;
+
+    books[bookIndex]
+    .chapters[chapterIndex]
+    .pages[pageIndex]
+    .title = newName;
+
+    saveData();
+
+    renderBooks();
+
+    showToast(
+        "✏️ Page Renamed"
+    );
+
+}
+
+/* =========================
+   AI MODE SYSTEM
+========================= */
+
+let aiMode = localStorage.getItem(
+    "neuro-ai-mode"
+) === "true";
+
+/* LOAD SAVED MODE */
+
+window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const toggle =
+        document.getElementById(
+            "aiModeToggle"
+        );
+
+        if(toggle){
+
+            toggle.checked =
+            aiMode;
+
+        }
+
+    }
+);
+
+/* TOGGLE AI MODE */
+
+function toggleAIMode(){
+
+    aiMode =
+    document.getElementById(
+        "aiModeToggle"
+    ).checked;
+
+    localStorage.setItem(
+        "neuro-ai-mode",
+        aiMode
+    );
+
+    showToast(
+
+        aiMode
+
+        ?
+
+        "🧠 AI Mode Enabled"
+
+        :
+
+        "❌ AI Mode Disabled"
+
+    );
+
+}
+
+function showSubscriptionPopup(){
+
+    const popup =
+    document.createElement("div");
+
+    popup.className =
+    "subscription-popup";
+
+    popup.innerHTML = `
+
+        <div class="subscription-box">
+
+            <h2>
+                NeuroNote AI+
+            </h2>
+
+            <p>
+                Unlock premium AI features
+                and unlimited requests.
+            </p>
+
+            <h3>
+                ₹30 / month
+            </h3>
+
+            <button onclick="startSubscription()">
+                Subscribe Now
+            </button>
+
+            <button onclick="this.parentElement.parentElement.remove()">
+                Maybe Later
+            </button>
+
+        </div>
+
+    `;
+
+    document.body.appendChild(
+        popup
+    );
+
+}
+
+
+
+/* =========================
    START APP
 ========================= */
 
@@ -2263,3 +2986,4 @@ renderBooks();
 console.log(
     "NeuroNote Loaded Successfully"
 );
+
