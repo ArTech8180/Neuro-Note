@@ -2158,7 +2158,7 @@ function toggleAI(){
 ========================= */
 
 const GEMINI_API_KEY =
-"AIzaSyA_0vgF7xzpNg9CNiToJrR46H8skQdz5Wc";
+"";
 
 async function sendAIMessage(){
 
