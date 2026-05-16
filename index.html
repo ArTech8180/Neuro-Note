@@ -16,6 +16,13 @@
         href="style.css"
     >
 
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+
     <link rel="icon" type="image/png" href="icon.png">
 
 </head>
@@ -50,12 +57,6 @@
         </div>
 
         <div class="right-top">
-
-            <button class="ai-btn">
-
-                AI MODE
-
-            </button>
 
             <button
                 class="settings-btn">
@@ -115,6 +116,29 @@
 
     </div>
 
+    <!-- AI MODE -->
+    <div class="ai-mode-setting">
+
+        <span>
+            AI Mode
+        </span>
+
+        <label class="switch">
+
+            <input
+                type="checkbox"
+                id="aiModeToggle"
+                onchange="toggleAIMode()"
+            >
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+
+
 
     <!-- HELP BUTTON -->
 
@@ -151,32 +175,76 @@
 
                 </button>
 
-                <div class="export-dropdown">
+                <div class="top-actions-row">
 
-                    <button
-                        class="export-main-btn"
-                        onclick="toggleExportMenu()">
+                    <!-- EXPORT -->
                 
-                        Export ▼
-                
-                    </button>
-                
-                    <div
-                        id="exportMenu"
-                        class="export-menu">
-                
-                        <button onclick="exportBookPDF()">
-                            Export PDF
-                        </button>
-                
-                        <button onclick="exportBookDOCX()">
-                            Export DOCX
-                        </button>
-                
-                        <button onclick="exportBookTXT()">
-                            Export TXT
-                        </button>
-                
+                    <div class="file-actions-row">
+
+                        <!-- EXPORT -->
+                    
+                        <div class="export-dropdown">
+                    
+                            <button
+                                class="export-main-btn"
+                                onclick="toggleExportMenu()">
+                    
+                                Export ▼
+                    
+                            </button>
+                    
+                            <div
+                                id="exportMenu"
+                                class="export-menu">
+                    
+                                <button onclick="exportBookPDF()">
+                                    PDF
+                                </button>
+                    
+                                <button onclick="exportBookDOCX()">
+                                    DOCX
+                                </button>
+                    
+                                <button onclick="exportBookTXT()">
+                                    TXT
+                                </button>
+                    
+                            </div>
+                    
+                        </div>
+                    
+                        <!-- IMPORT -->
+                    
+                        <div class="import-dropdown">
+                    
+                            <button
+                                class="import-main-btn"
+                                onclick="toggleImportMenu()">
+                    
+                                Import ▼
+                    
+                            </button>
+                    
+                            <div
+                                id="importMenu"
+                                class="import-menu">
+                    
+                                <button onclick="importTXT()">
+                                    TXT
+                                </button>
+                    
+                                <button onclick="importDOCX()">
+                                    DOCX
+                                </button>
+                    
+                                <button onclick="importPDF()">
+                                    PDF
+                                </button>
+                    
+                            </div>
+                    
+                        </div>
+                    
                     </div>
                 
                 </div>
@@ -254,6 +322,32 @@
                         H1
 
                     </button>
+
+                    <button onclick="toggleHighlight()">
+                        <i class="fa-solid fa-highlighter"></i>
+                    </button>
+
+                    
+                    <select onchange="changeTextSize(this.value)"
+                    class="text-size-select">
+
+                        <option value="3">
+                            Normal
+                        </option>
+
+                        <option value="1">
+                            Small
+                        </option>
+
+                        <option value="5">
+                            Large
+                        </option>
+
+                        <option value="7">
+                            Huge
+                        </option>
+
+                    </select>
 
                     <input
                         type="color"
@@ -383,9 +477,13 @@
         
                 <h2>Neuro AI</h2>
         
-                <button onclick="toggleAI()">
+                <button
+                    class="ai-close-btn"
+                    onclick="toggleAI()"
+                >
                     ✕
                 </button>
+
         
             </div>
         
@@ -422,16 +520,11 @@
         hidden
     >
 
-    <!-- PDF LIBRARY -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- DOCX LIBRARY -->
-        <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
-
-    <!-- FILE SAVER -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <input
+        type="file"
+        id="importFileInput"
+        hidden
+    >
 
 
 <!-- TABLE POPUP -->
@@ -609,7 +702,6 @@
 
 </div>
 
-    <script src="script.js"></script>
 
     <!-- COMMAND PALETTE -->
 
@@ -656,6 +748,36 @@
     </div>
 
     <div id="toastContainer"></div>
+
+
+
+<!-- =========================
+     LIBRARIES
+========================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+
+
+
+<!-- =========================
+     YOUR SCRIPT
+========================= -->
+
+<script src="script.js"></script>
+
+
 
 </body>
 </html>
