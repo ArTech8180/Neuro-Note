@@ -6,7 +6,7 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
     <title>NeuroNote</title>
@@ -161,6 +161,8 @@
         <!-- =========================
              SIDEBAR
         ========================== -->
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <aside
             class="sidebar"
@@ -328,32 +330,56 @@
                     </button>
 
                     
-                    <select onchange="changeTextSize(this.value)"
-                    class="text-size-select">
+                    <label
+                        class="toolbar-select-control text-size-control"
+                        title="Text Size"
+                        aria-label="Text Size">
 
-                        <option value="3">
-                            Normal
-                        </option>
+                        <i class="fa-solid fa-text-height"></i>
 
-                        <option value="1">
-                            Small
-                        </option>
+                        <select
+                            onchange="changeTextSize(this.value)"
+                            class="text-size-select">
 
-                        <option value="5">
-                            Large
-                        </option>
+                            <option value="3">
+                                Normal
+                            </option>
 
-                        <option value="7">
-                            Huge
-                        </option>
+                            <option value="1">
+                                Small
+                            </option>
 
-                    </select>
+                            <option value="5">
+                                Large
+                            </option>
 
-                    <input
-                        type="color"
-                        id="textColorPicker"
+                            <option value="7">
+                                Huge
+                            </option>
+
+                        </select>
+
+                        <i class="fa-solid fa-chevron-down"></i>
+
+                    </label>
+
+                    <label
+                        class="toolbar-color-control"
                         title="Text Color"
-                    />
+                        aria-label="Text Color">
+
+                        <i class="fa-solid fa-a"></i>
+
+                        <span class="color-swatch"></span>
+
+                        <input
+                            type="color"
+                            id="textColorPicker"
+                            value="#ffffff"
+                            title="Text Color"
+                        />
+
+                    </label>
 
                 </div>
 
@@ -430,42 +456,52 @@
 
         <aside class="tools">
 
-            <button onclick="insertDrawBlock()">
+            <button
+                class="tool-btn"
+                title="Insert Drawing"
+                aria-label="Insert Drawing"
+                onclick="insertDrawBlock()">
 
-                ✏
+                <i class="fa-solid fa-pen"></i>
 
             </button>
 
             <button
                 class="tool-btn"
-                title="Brush">
+                title="Brush"
+                aria-label="Brush">
 
-                🖌
+                <i class="fa-solid fa-paintbrush"></i>
 
             </button>
 
             <button
                 class="tool-btn"
+                title="Insert Image"
+                aria-label="Insert Image"
                 onclick="openImagePicker()">
 
-                📷
+                <i class="fa-solid fa-image"></i>
 
             </button>
 
             <button
                 class="tool-btn"
                 title="Insert Table"
+                aria-label="Insert Table"
                 onclick="openTablePopup()">
 
-                📊
+                <i class="fa-solid fa-table"></i>
 
             </button>
 
             <button
                 class="ai-btn"
+                title="Neuro AI"
+                aria-label="Neuro AI"
                 onclick="toggleAI()">
 
-                🤖
+                <i class="fa-solid fa-robot"></i>
 
             </button>
 
@@ -525,6 +561,58 @@
         id="importFileInput"
         hidden
     >
+
+
+<!-- CREATE PAGE POPUP -->
+
+<div id="pagePopup" class="page-popup">
+
+    <div class="page-popup-content">
+
+        <h3>Create Page</h3>
+
+        <input
+            type="text"
+            id="pageNameInput"
+            placeholder="Page name"
+        >
+
+        <div class="page-type-options">
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="writingPageType"
+                    checked
+                >
+                Writing
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="paintingPageType"
+                >
+                Painting
+            </label>
+
+        </div>
+
+        <div class="page-popup-buttons">
+
+            <button onclick="createPageFromPopup()">
+                Create
+            </button>
+
+            <button onclick="closePagePopup()">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 
 <!-- TABLE POPUP -->
