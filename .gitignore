@@ -1,0 +1,36 @@
+# Python local environment and virtual environments
+.venv/
+venv/
+env/
+ENV/
+bin/
+lib/
+include/
+pip-selfcheck.json
+
+# Databases
+backend/*.db
+backend/*.db-journal
+backend/*.db-shm
+backend/*.db-wal
+*.db
+*.sqlite
+
+# Secret keys and configuration (contains private credentials)
+backend/.env
+
+# Node.js dependencies
+node_modules/
+
+# Python caching
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# System or editor specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

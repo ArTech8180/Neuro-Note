@@ -16,6 +16,8 @@
         href="style.css"
     >
 
+    
+
 
     <link
         rel="stylesheet"
@@ -26,6 +28,29 @@
     <link rel="icon" type="image/png" href="icon.png">
 
 </head>
+
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
+GoogleAuthProvider,
+signInWithPopup,
+signOut
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+getFirestore
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+</script>
+
+
 
 <body class="dark-theme">
 
@@ -58,6 +83,28 @@
 
         <div class="right-top">
 
+            <button id="loginBtn" class="login-btn" onclick="loginWithGoogle()">
+                Sign In
+            </button>
+
+            <div id="profileWidget" class="profile-widget" style="display: none;">
+                <img id="userAvatar" src="" class="user-avatar" onclick="toggleProfileMenu(event)">
+                <div id="profileMenu" class="profile-menu">
+                    <div class="profile-header">
+                        <img id="userAvatarMenu" src="" class="user-avatar-large">
+                        <div class="profile-info">
+                            <span id="userName">User Name</span>
+                            <span id="userEmail">user@email.com</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button onclick="handleLogout()" class="logout-btn">
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <button
                 class="settings-btn">
                 ⚙
@@ -66,6 +113,30 @@
         </div>
 
     </header>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="login-modal">
+        <div class="login-modal-content">
+            <div class="login-modal-header">
+                <h3>Sign In to NeuroNote</h3>
+                <button onclick="closeLoginModal()" class="close-modal-btn">✕</button>
+            </div>
+            <p class="login-desc">Sync all your private books and notes across devices.</p>
+            
+            <div class="auth-section">
+                <!-- Will host the official Google sign-in button -->
+                <div id="googleBtnContainer" class="google-btn-container"></div>
+            </div>
+
+            <div class="divider-container">
+                <span class="divider-line"></span>
+                <span class="divider-text">OR</span>
+                <span class="divider-line"></span>
+            </div>
+
+            
+        </div>
+    </div>
 
 
     <!-- =========================
@@ -203,12 +274,8 @@
                                     PDF
                                 </button>
                     
-                                <button onclick="exportBookDOCX()">
-                                    DOCX
-                                </button>
-                    
-                                <button onclick="exportBookTXT()">
-                                    TXT
+                                <button onclick="exportBookNN()">
+                                    NeuroNote (.nn)
                                 </button>
                     
                             </div>
@@ -231,12 +298,8 @@
                                 id="importMenu"
                                 class="import-menu">
                     
-                                <button onclick="importTXT()">
-                                    TXT
-                                </button>
-                    
-                                <button onclick="importDOCX()">
-                                    DOCX
+                                <button onclick="importNN()">
+                                    NeuroNote (.nn)
                                 </button>
                     
                                 <button onclick="importPDF()">
@@ -836,6 +899,13 @@
     </div>
 
     <div id="toastContainer"></div>
+    
+    <div id="syncStatus">
+
+        Ready
+
+    </div>
+
 
 
 
@@ -849,14 +919,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-
-<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-
 
 
 <!-- =========================
@@ -865,6 +928,10 @@
 
 <script src="script.js"></script>
 
+<script
+    type="module"
+    src="firebase-auth.js">
+</script>
 
 
 </body>

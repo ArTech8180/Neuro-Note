@@ -1,16 +1,14 @@
-console.log("DOCX:", typeof docx);
+
 console.log("saveAs:", typeof saveAs);
 console.log("html2canvas:", typeof html2canvas);
 console.log("jsPDF:", typeof window.jspdf);
-console.log("Mammoth:", typeof mammoth);
-console.log(window.mammoth || null);
-
-
 
 
 /* =========================
    ELEMENTS
 ========================= */
+
+
 
 const canvasData = {};
 
@@ -117,6 +115,8 @@ let books = JSON.parse(
 
 ];
 
+window.books = books;
+
 let currentPage = null;
 
 let openTabs = [];
@@ -133,12 +133,15 @@ let currentPaintingState = null;
 
 function saveData(){
 
+    window.books = books;
+
     localStorage.setItem(
         "neuroNoteData",
         JSON.stringify(books)
     );
-
 }
+window.saveData =
+saveData;
 
 /* =========================
    TOAST
@@ -756,6 +759,9 @@ function renderBooks(){
 
 }
 
+window.renderBooks =
+renderBooks;
+
 /* =========================
    TABS
 ========================= */
@@ -885,6 +891,15 @@ newBookBtn.addEventListener(
 
             saveData();
 
+            if(
+                window.saveBooksToCloud
+            ){
+            
+                saveBooksToCloud();
+            
+            }
+
+
             renderBooks();
 
         }
@@ -913,8 +928,15 @@ function addChapter(bookIndex){
             pages: []
 
         });
-
         saveData();
+
+        if(
+            window.saveBooksToCloud
+        ){
+
+            saveBooksToCloud();
+
+        }
 
         renderBooks();
 
@@ -1018,6 +1040,13 @@ function createPageFromPopup(){
 
     saveData();
 
+    if(
+        window.saveBooksToCloud
+    ){
+
+        saveBooksToCloud();
+
+    }
     renderBooks();
 
     closePagePopup();
@@ -1049,6 +1078,14 @@ function deleteBook(bookIndex){
 
         saveData();
 
+        if(
+            window.saveBooksToCloud
+        ){
+
+            saveBooksToCloud();
+
+        }
+
         renderBooks();
 
         showToast(
@@ -1075,6 +1112,14 @@ function deleteChapter(
         );
 
         saveData();
+
+        if(
+            window.saveBooksToCloud
+        ){
+
+            saveBooksToCloud();
+
+        }
 
         renderBooks();
 
@@ -1104,6 +1149,14 @@ function deletePage(
         );
 
         saveData();
+
+        if(
+            window.saveBooksToCloud
+        ){
+
+            saveBooksToCloud();
+
+        }
 
         renderBooks();
 
@@ -1777,6 +1830,14 @@ function savePaintingPage(){
 
     saveData();
 
+    if(
+        window.saveBooksToCloud
+    ){
+
+        saveBooksToCloud();
+
+    }
+
     showSaveStatus(
         "Saved"
     );
@@ -1957,30 +2018,49 @@ function toggleChapter(element){
    AUTO SAVE
 ========================= */
 
+let saveTimer;
+
 editor.addEventListener(
+
     "input",
+
     () => {
 
-        if(!currentPage) return;
-
-        if(currentPage.type === "painting") return;
+        if(!currentPage)
+        return;
 
         currentPage.content =
         editor.innerHTML;
 
-        clearTimeout(saveTimeout);
+        saveData();
 
-        saveTimeout = setTimeout(() => {
+        if(
+            window.saveBooksToCloud
+        ){
 
-            saveData();
+            saveBooksToCloud();
 
-            showSaveStatus(
-                "Saved"
-            );
+        }
 
-        }, 1000);
+        clearTimeout(
+            saveTimer
+        );
+
+        saveTimer =
+        setTimeout(
+
+            () => {
+
+                saveBooksToCloud();
+
+            },
+
+            2000
+
+        );
 
     }
+
 );
 
 /* =========================
@@ -3100,6 +3180,13 @@ document.addEventListener(
 
             saveData();
 
+            if(
+                window.saveBooksToCloud
+            ){
+
+                saveBooksToCloud();
+
+            }
             showToast(
                 "💾 Saved"
             );
@@ -3263,39 +3350,24 @@ async function sendAIMessage(){
     );
 
     try{
+        let activePageContext = "";
+        if (currentPage && currentPage.type !== "painting") {
+            activePageContext = editor.innerText;
+        }
 
         const response =
         await fetch(
-
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-
+            `${BACKEND_URL}/api/ai/chat`,
             {
-
                 method:"POST",
-
                 headers:{
-                    "Content-Type":
-                    "application/json"
+                    "Content-Type":"application/json"
                 },
-
                 body:JSON.stringify({
-
-                    contents:[
-
-                        {
-                            parts:[
-                                {
-                                    text:userText
-                                }
-                            ]
-                        }
-
-                    ]
-
+                    prompt: userText,
+                    context: activePageContext
                 })
-
             }
-
         );
 
         const data =
@@ -3303,54 +3375,27 @@ async function sendAIMessage(){
 
         loading.remove();
 
-    let aiText = "";
+        let aiText = data.reply || "No response from AI.";
 
-    if(
-        data.candidates
-        &&
-        data.candidates.length > 0
-    ){
+        if(
+            aiText.includes("quota")
+            ||
+            aiText.includes("Quota")
+        ){
 
-        aiText =
+            aiText = `
+            🚀 Free AI limit reached.
 
-        data.candidates[0]
-        .content.parts[0]
-        .text;
+            Upgrade to NeuroNote AI+
+            for unlimited smart features.
 
-    }
-    else if(data.error){
+            Subscription:
+            ₹30/month
+            `;
 
-        aiText =
-        "❌ " + data.error.message;
+            showSubscriptionPopup();
 
-    }
-    else{
-
-        aiText =
-        "No response from AI.";
-
-    }
-
-    if(
-        aiText.includes("quota")
-        ||
-        aiText.includes("Quota")
-    ){
-
-        aiText = `
-        🚀 Free AI limit reached.
-
-        Upgrade to NeuroNote AI+
-        for unlimited smart features.
-
-        Subscription:
-        ₹30/month
-        `;
-
-        showSubscriptionPopup();
-
-    }
-
+        }
 
         const aiReply =
         document.createElement("div");
@@ -3558,62 +3603,25 @@ function toggleExportMenu(){
    EXPORT DOCX
 ========================= */
 
-async function exportBookDOCX(){
+function exportBookNN(){
 
     const book = selectBook();
 
     if(!book) return;
 
-    const text = getBookText(book);
-
-    const doc = new docx.Document({
-
-        sections: [
-            {
-                properties: {},
-                children: [
-
-                    new docx.Paragraph({
-                        text: text
-                    })
-
-                ]
-            }
-        ]
-
-    });
-
-    const blob =
-    await docx.Packer.toBlob(doc);
-
-    saveAs(
-        blob,
-        `${book.title}.docx`
-    );
-
-    showToast("📘 DOCX Exported");
-
-}
-
-function exportBookTXT(){
-
-    const book = selectBook();
-
-    if(!book) return;
-
-    const text = getBookText(book);
+    const jsonStr = JSON.stringify(book, null, 2);
 
     const blob = new Blob(
-        [text],
-        { type: "text/plain" }
+        [jsonStr],
+        { type: "application/json" }
     );
 
     saveAs(
         blob,
-        `${book.title}.txt`
+        `${book.title}.nn`
     );
 
-    showToast("📄 TXT Exported");
+    showToast("📘 NeuroNote Book Exported");
 
 }
 
@@ -3760,12 +3768,12 @@ document.addEventListener(
    IMPORT TXT
 ========================= */
 
-function importTXT(){
+function importNN(){
 
     const input = document.createElement("input");
 
     input.type = "file";
-    input.accept = ".txt";
+    input.accept = ".nn";
 
     input.onchange = e => {
 
@@ -3777,54 +3785,49 @@ function importTXT(){
 
         reader.onload = function(event){
 
-            editor.innerText = event.target.result;
+            try {
 
-            showToast("TXT Imported");
+                const bookData = JSON.parse(event.target.result);
+
+                if(!bookData.title || !Array.isArray(bookData.chapters)){
+
+                    throw new Error("Invalid .nn file: Missing title or chapters.");
+
+                }
+
+                books.push(bookData);
+
+                saveData();
+
+                if(
+                    window.saveBooksToCloud
+                ){
+
+                    saveBooksToCloud();
+
+                }
+
+                renderBooks();
+
+                showToast("✅ NeuroNote Book Imported");
+
+                if(window.isLoggedIn && window.isLoggedIn()){
+
+                    window.triggerSync();
+
+                }
+
+            } catch(err) {
+
+                console.error(err);
+
+                showToast("❌ Invalid .nn file format");
+
+            }
 
         };
 
         reader.readAsText(file);
-
-    };
-
-    input.click();
-
-}
-
-/* =========================
-   IMPORT DOCX
-========================= */
-
-async function importDOCX(){
-
-    const input = document.createElement("input");
-
-    input.type = "file";
-    input.accept = ".docx";
-
-    input.onchange = async e => {
-
-        const file = e.target.files[0];
-
-        if(!file) return;
-
-        const arrayBuffer = await file.arrayBuffer();
-
-        mammoth.extractRawText({ arrayBuffer })
-        .then(result => {
-
-            editor.innerText = result.value;
-
-            showToast("DOCX Imported");
-
-        })
-        .catch(err => {
-
-            console.error(err);
-
-            showToast("DOCX Import Failed");
-
-        });
 
     };
 
@@ -3897,6 +3900,14 @@ function renameBook(bookIndex){
 
     saveData();
 
+    if(
+        window.saveBooksToCloud
+    ){
+
+        saveBooksToCloud();
+
+    }
+
     renderBooks();
 
     showToast(
@@ -3922,6 +3933,14 @@ function renameChapter(
     .title = newName;
 
     saveData();
+
+    if(
+        window.saveBooksToCloud
+    ){
+
+        saveBooksToCloud();
+
+    }
 
     renderBooks();
 
@@ -3950,6 +3969,14 @@ function renamePage(
     .title = newName;
 
     saveData();
+
+    if(
+        window.saveBooksToCloud
+    ){
+
+        saveBooksToCloud();
+
+    }
 
     renderBooks();
 
@@ -4061,7 +4088,50 @@ function showSubscriptionPopup(){
 
 }
 
+/* =========================
+    PROFILE MENU
+========================= */
 
+function toggleProfileMenu(event){
+
+    event.stopPropagation();
+
+    const profileMenu =
+    document.getElementById(
+        "profileMenu"
+    );
+
+    profileMenu.classList.toggle(
+        "show"
+    );
+    
+    document.addEventListener(
+
+        "click",
+    
+        () => {
+    
+            const profileMenu =
+            document.getElementById(
+                "profileMenu"
+            );
+    
+            if(profileMenu){
+    
+                profileMenu.classList.remove(
+                    "show"
+                );
+    
+            }
+    
+        }
+    
+    );
+
+}
+
+window.toggleProfileMenu =
+toggleProfileMenu;
 
 /* =========================
    START APP
@@ -4072,4 +4142,3 @@ renderBooks();
 console.log(
     "NeuroNote Loaded Successfully"
 );
-
