@@ -1,4 +1,29 @@
 
+function closeLoginModal(){
+    const modal = document.getElementById("loginModal");
+    if(modal) modal.style.display = "none";
+}
+window.closeLoginModal = closeLoginModal;
+
+function startSubscription(){
+    showToast("🚀 Redirecting to subscription page...");
+    // Replace with your payment link
+    window.open("https://rzp.io/", "_blank");
+    document.querySelectorAll(".subscription-popup").forEach(p => p.remove());
+}
+window.startSubscription = startSubscription;
+
+
+/* =========================
+   BACKEND / AI CONFIG
+========================= */
+
+// Set your Gemini proxy backend URL here, OR use direct Gemini API
+// For direct Gemini calls, set GEMINI_API_KEY below and BACKEND_URL to ""
+const BACKEND_URL = ""; // e.g. "https://your-backend.com"
+const GEMINI_API_KEY_DIRECT = ""; // optional: direct Gemini key (client-side)
+
+
 console.log("saveAs:", typeof saveAs);
 console.log("html2canvas:", typeof html2canvas);
 console.log("jsPDF:", typeof window.jspdf);
@@ -3257,25 +3282,9 @@ function runCommand(command){
 ========================= */
 
 function toggleAI(){
-
-    if(!aiMode){
-
-        showToast(
-            "Enable AI Mode"
-        );
-
-        return;
-
-    }
-
-    document
-    .getElementById(
-        "aiSidebar"
-    )
-    .classList.toggle(
-        "show"
-    );
-
+    const sidebar = document.getElementById("aiSidebar");
+    if(!sidebar) return;
+    sidebar.classList.toggle("show");
 }
 
 /* =========================
@@ -3352,30 +3361,50 @@ async function sendAIMessage(){
     try{
         let activePageContext = "";
         if (currentPage && currentPage.type !== "painting") {
-            activePageContext = editor.innerText;
+            activePageContext = editor.innerText.slice(0, 2000);
         }
 
-        const response =
-        await fetch(
-            `${BACKEND_URL}/api/ai/chat`,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    prompt: userText,
-                    context: activePageContext
-                })
-            }
-        );
+        let aiText = "No response from AI.";
 
-        const data =
-        await response.json();
+        if(GEMINI_API_KEY_DIRECT){
+            /* Direct Gemini API call */
+            const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY_DIRECT}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: activePageContext
+                                    ? `Context from current page:\n${activePageContext}\n\nUser: ${userText}`
+                                    : userText
+                            }]
+                        }]
+                    })
+                }
+            );
+            const geminiData = await geminiRes.json();
+            aiText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
+                     || geminiData?.error?.message
+                     || "No response from Gemini.";
+        } else if(BACKEND_URL){
+            /* Backend proxy call */
+            const response = await fetch(
+                `${BACKEND_URL}/api/ai/chat`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: userText, context: activePageContext })
+                }
+            );
+            const data = await response.json();
+            aiText = data.reply || "No response from AI.";
+        } else {
+            aiText = "⚠️ No AI backend configured. Set GEMINI_API_KEY_DIRECT or BACKEND_URL in script.js";
+        }
 
         loading.remove();
-
-        let aiText = data.reply || "No response from AI.";
 
         if(
             aiText.includes("quota")

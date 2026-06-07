@@ -25,30 +25,12 @@
     />
 
 
-    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="icon" type="png" href="icon.png">
 
 </head>
 
 
-<script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getAuth,
-GoogleAuthProvider,
-signInWithPopup,
-signOut
-}
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-import {
-getFirestore
-}
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-</script>
 
 
 
@@ -166,23 +148,37 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
             id="themeDropdownContent"
             class="theme-dropdown-content"
         >
-
+            <button onclick="setTheme('aurora-theme')">
+                Aurora Glass
+            </button>
+            
+            <button onclick="setTheme('space-theme')">
+                Space Station
+            </button>
+            
+            <button onclick="setTheme('liquid-theme')">
+                Liquid Glass
+            </button>
+            
+            <button onclick="setTheme('vision-theme')">
+                VisionOS
+            </button>
+            
+            <button onclick="setTheme('neon-theme')">
+                Holographic Neon
+            </button>
+            
+            <button onclick="setTheme('matrix-theme')">
+                Matrix AI
+            </button>
+            
             <button onclick="setTheme('dark-theme')">
                 Dark
             </button>
-
+            
             <button onclick="setTheme('light-theme')">
                 Light
             </button>
-
-            <button onclick="setTheme('red-theme')">
-                Red
-            </button>
-
-            <button onclick="setTheme('cyber-theme')">
-                Cyber
-            </button>
-
         </div>
 
     </div>
@@ -854,6 +850,15 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 </div>
 
 
+
+<!-- CONTEXT MENU -->
+<div id="contextMenu" class="context-menu-popup" style="display:none;position:fixed;background:var(--bg-card);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow);z-index:500;overflow:hidden;min-width:150px;">
+    <div onclick="copyText()" style="padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background 0.15s;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">📋 Copy</div>
+    <div onclick="cutText()"  style="padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background 0.15s;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">✂️ Cut</div>
+    <div onclick="pasteText()" style="padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background 0.15s;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">📌 Paste</div>
+    <div onclick="formatText('bold')" style="padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"><b>B</b> Bold</div>
+</div>
+
     <!-- COMMAND PALETTE -->
 
     <div id="commandPalette" class="command-palette">
@@ -898,13 +903,23 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
     </div>
 
+<!-- ==============================
+|------         --      |       |   |--------   |--------   |-------|
+|      |       |  |     | |     |   |           |           |       |
+|       |     |____|    |   |   |   |   _____   |---        |_______|
+|      |     |      |   |     | |   |       |   |           |   |
+|------     |        |  |       |   |_______|   |--------   |     |__
+
+
+
     <div id="toastContainer"></div>
     
-    <div id="syncStatus">
+        <div id="syncStatus">
 
-        Ready
+            Ready
 
-    </div>
+        </div>
+============================== -->
 
 
 
