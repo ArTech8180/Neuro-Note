@@ -76,12 +76,22 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
                 <h1>
                     NeuroNote
                 </h1>
+                <span class="brand-tagline">Your intelligent notebook</span>
             
             </div>
 
         </div>
 
+        <label class="library-search" for="searchInput">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search your books">
+        </label>
+
         <div class="right-top">
+
+            <button class="top-new-book" onclick="openBookCreator()"><i class="fa-solid fa-plus"></i> New Book</button>
+
+            <button class="theme-quick-btn" onclick="toggleThemePanel()" aria-label="Change theme"><i class="fa-solid fa-swatchbook"></i></button>
 
             <button id="loginBtn" class="login-btn" onclick="loginWithGoogle()">
                 Sign In
@@ -313,12 +323,6 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
                     </div>
                 
                 </div>
-
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="Search books..."
-                >
 
             </div>
 
@@ -897,6 +901,17 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
         </div>
 
     </div>
+
+    <section id="libraryHome" class="library-home" aria-label="My Library">
+        <div class="library-ambient ambient-one"></div><div class="library-ambient ambient-two"></div>
+        <div class="library-hero"><div><p class="eyebrow">YOUR PERSONAL ARCHIVE</p><h2 id="libraryGreeting">Good evening</h2><p class="library-question">What are you creating today?</p></div><div class="library-stat" id="libraryStat">Your ideas, beautifully kept.</div></div>
+        <div class="library-heading"><div><p class="eyebrow">COLLECTION</p><h3>My Library</h3></div><div class="library-actions"><div class="library-file-menu"><button class="library-file-trigger" onclick="toggleLibraryFileMenu()"><i class="fa-solid fa-arrow-up-from-bracket"></i> Import & Export</button><div id="libraryFileMenu" class="library-file-popover"><span>Import</span><button onclick="importNN(); closeLibraryFileMenu()">NeuroNote (.nn)</button><button onclick="importPDF(); closeLibraryFileMenu()">PDF</button><span>Export</span><button onclick="exportBookNN(); closeLibraryFileMenu()">NeuroNote (.nn)</button><button onclick="exportBookPDF(); closeLibraryFileMenu()">PDF</button></div></div><button class="library-create-link" onclick="openBookCreator()"><i class="fa-solid fa-plus"></i> Create a book</button></div></div>
+        <div id="libraryShelf" class="library-shelf"></div>
+    </section>
+
+    <div id="bookCreatorModal" class="library-modal" aria-hidden="true"><div class="creator-dialog"><button class="modal-close" onclick="closeBookCreator()" aria-label="Close">×</button><section class="cover-preview-panel"><p class="eyebrow">LIVE COVER PREVIEW</p><div id="coverPreview" class="cover-preview style-cinematic"><img id="coverImagePreview" alt="" hidden><div id="coverOverlay" class="cover-overlay"></div><div id="coverTextPreview" class="cover-text-preview align-left"><span id="previewTitle">Untitled book</span><small id="previewSubtitle">A place for your next idea</small><em id="previewAuthor">NeuroNote</em></div></div></section><section class="creator-controls"><p class="eyebrow">MAKE IT YOURS</p><h2>Design your book</h2><div class="cover-form-grid"><label>Title<input id="coverTitleInput" maxlength="80" placeholder="Nights of Bur-Dubai"></label><label>Subtitle<input id="coverSubtitleInput" maxlength="120" placeholder="A journey through memories"></label><label>Author<input id="coverAuthorInput" maxlength="60" placeholder="Your name"></label><label>Style<select id="coverStyleInput"><option value="minimal">Minimal</option><option value="editorial">Editorial</option><option value="luxury">Luxury</option><option value="travel">Travel</option><option value="story">Story</option><option value="academic">Academic</option><option value="futuristic">Futuristic</option><option value="cinematic" selected>Cinematic</option><option value="dark">Dark</option><option value="custom">Custom</option></select></label><label>Typography<select id="coverFontInput"><option value="serif">Elegant Serif</option><option value="sans">Modern Sans</option><option value="editorial">Editorial</option><option value="handwritten">Handwritten</option><option value="futuristic">Futuristic</option><option value="minimal">Minimal</option><option value="classic">Classic</option></select></label><label>Text colour<input id="coverColorInput" type="color" value="#ffffff"></label><label>Text size<input id="coverSizeInput" type="range" min="24" max="64" value="42"></label><label>Image / artwork<input id="coverImageInput" type="file" accept="image/*"></label><label>Image opacity<input id="coverOpacityInput" type="range" min="0" max="100" value="100"></label></div><div class="cover-position-row"><span>Title position</span><button type="button" onclick="setCoverAlignment('left')">Left</button><button type="button" onclick="setCoverAlignment('center')">Centre</button><button type="button" onclick="setCoverAlignment('right')">Right</button></div><button class="create-book-action" onclick="createBookFromCover()">Create Book <i class="fa-solid fa-arrow-right"></i></button></section></div></div>
+
+    <div id="settingsModal" class="library-modal" aria-hidden="true"><div class="settings-dialog"><button class="modal-close" onclick="closeSettingsModal()">×</button><p class="eyebrow">NEURONOTE</p><h2>Settings</h2><div class="settings-grid"><section><h3>Account</h3><p id="settingsAccount">Sign in to securely sync your books across your devices.</p><button onclick="loginWithGoogle()">Sign in with Google</button></section><section><h3>Appearance</h3><p>Theme, accent colour, font and animation intensity.</p><button onclick="toggleThemePanel(); closeSettingsModal()">Choose theme</button></section><section><h3>Editor</h3><p>Default font, size, line spacing, page width and auto-save.</p></section><section><h3>Canvas</h3><p>Default background, grid size and drawing preferences.</p></section><section><h3>AI</h3><p>Assistant behaviour, response style and context awareness.</p></section><section><h3>Sync & data</h3><p id="settingsSync">Local library ready.</p><button onclick="window.saveBooksToCloud && window.saveBooksToCloud()">Sync now</button></section><section><h3>About</h3><p>NeuroNote · Your private place for thought.</p></section></div></div></div>
 
     <div id="toastContainer"></div>
     

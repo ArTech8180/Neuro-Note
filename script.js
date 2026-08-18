@@ -119,6 +119,8 @@ window.books = books;
 
 let currentPage = null;
 
+let currentBookIndex = null;
+
 let openTabs = [];
 
 let saveTimeout;
@@ -225,9 +227,7 @@ settingsBtn.addEventListener(
     "click",
     () => {
 
-        themePanel.classList.toggle(
-            "show"
-        );
+        openSettingsModal();
 
     }
 );
@@ -242,6 +242,8 @@ document.addEventListener(
             !themePanel.contains(e.target)
             &&
             !settingsBtn.contains(e.target)
+            &&
+            !document.querySelector(".theme-quick-btn").contains(e.target)
         ){
 
             themePanel.classList.remove(
@@ -303,6 +305,11 @@ function setTheme(theme){
     );
 
 }
+
+function toggleThemePanel(){
+    themePanel.classList.toggle("show");
+}
+window.toggleThemePanel = toggleThemePanel;
 
 const savedTheme =
 localStorage.getItem(
@@ -543,8 +550,21 @@ function renderBooks(){
     const searchValue =
     searchInput.value.toLowerCase();
 
+    const outlineBookIndex =
+    document.body.dataset.view === "workspace"
+    ?
+    currentBookIndex
+    :
+    null;
+
     books.forEach(
     (book, bookIndex) => {
+
+        if(
+            outlineBookIndex !== null
+            &&
+            bookIndex !== outlineBookIndex
+        ) return;
 
         if(
             !book.title
@@ -756,6 +776,8 @@ function renderBooks(){
         );
 
     });
+
+    if(typeof renderLibrary === "function") renderLibrary();
 
 }
 
@@ -1177,6 +1199,12 @@ function openPage(
     chapterIndex,
     pageIndex
 ){
+
+    currentBookIndex = bookIndex;
+
+    if(document.body.dataset.view === "workspace"){
+        renderBooks();
+    }
 
     if(window.innerWidth <= 900) closeSidebar();
 
@@ -3603,9 +3631,9 @@ function toggleExportMenu(){
    EXPORT DOCX
 ========================= */
 
-function exportBookNN(){
+function exportBookNN(bookToExport){
 
-    const book = selectBook();
+    const book = bookToExport || selectBook();
 
     if(!book) return;
 
@@ -3625,9 +3653,9 @@ function exportBookNN(){
 
 }
 
-async function exportBookPDF(){
+async function exportBookPDF(bookToExport){
 
-    const book = selectBook();
+    const book = bookToExport || selectBook();
 
     if(!book) return;
 
@@ -4134,10 +4162,174 @@ window.toggleProfileMenu =
 toggleProfileMenu;
 
 /* =========================
+   LIBRARY HOME
+========================= */
+
+let activeCoverAlignment = "left";
+
+function escapeLibraryText(value){ const element=document.createElement("div"); element.textContent=value || ""; return element.innerHTML; }
+function bookPageCount(book){ return (book.chapters || []).reduce((total, chapter) => total + (chapter.pages || []).length, 0); }
+function getGreeting(){ const hour=new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"; }
+
+function renderLibrary(){
+    const shelf=document.getElementById("libraryShelf"), greeting=document.getElementById("libraryGreeting"), stat=document.getElementById("libraryStat"); if(!shelf) return;
+    const filter=(searchInput ? searchInput.value : "").trim().toLowerCase();
+    const displayedBooks=books.filter(book => !filter || [book.title,book.subtitle,book.author].join(" ").toLowerCase().includes(filter));
+    const user=document.getElementById("userName"), name=user && user.textContent !== "User Name" ? `, ${user.textContent.split(" ")[0]}` : "";
+    if(greeting) greeting.textContent=`${getGreeting()}${name}`;
+    const pages=books.reduce((sum,book)=>sum+bookPageCount(book),0);
+    if(stat) stat.textContent=books.length ? `${books.length} ${books.length === 1 ? "book" : "books"} · ${pages} ${pages === 1 ? "page" : "pages"}` : "Your library is ready for its first story.";
+    if(!books.length){ shelf.innerHTML=`<div class="library-empty"><div><div class="empty-shelf">▰ ▰ ▰</div><h3>Your library is waiting.</h3><p>Create your first book and start something meaningful.</p><button onclick="openBookCreator()"><i class="fa-solid fa-plus"></i> Create Your First Book</button></div></div>`; return; }
+    if(!displayedBooks.length){ shelf.innerHTML=`<div class="library-empty"><div><h3>No books found</h3><p>Try another title, author, or subtitle.</p></div></div>`; return; }
+    shelf.innerHTML=displayedBooks.map(book=>{
+        const bookIndex=books.indexOf(book), cover=book.cover || {}, image=cover.image ? `<img src="${cover.image}" alt="">` : "", subtitle=escapeLibraryText(book.subtitle || "A NeuroNote collection"), title=escapeLibraryText(book.title || "Untitled book"), author=escapeLibraryText(book.author || "You"), style=escapeLibraryText(cover.style || "cinematic"), pages=bookPageCount(book);
+        return `<article class="library-book" onclick="openBookFromLibrary(${bookIndex})"><div class="book-object"><div class="book-spine"></div><div class="book-cover style-${style}">${image}<div class="book-cover-text"><strong>${title}</strong><small>${subtitle}</small></div></div><button class="book-menu" onclick="event.stopPropagation(); toggleBookMenu(${bookIndex})" aria-label="Book options"><i class="fa-solid fa-ellipsis"></i></button><div id="bookMenu-${bookIndex}" class="book-menu-popover" onclick="event.stopPropagation()"><button onclick="openBookFromLibrary(${bookIndex})">Open</button><button onclick="renameBook(${bookIndex})">Rename</button><button onclick="editCover(${bookIndex})">Edit cover</button><button onclick="duplicateBook(${bookIndex})">Duplicate</button><button onclick="toggleFavorite(${bookIndex})">${book.favorite ? "Remove favorite" : "Favorite"}</button><button onclick="exportBookNN()">Export</button><button onclick="deleteBook(${bookIndex})">Delete</button></div></div><div class="book-info"><div class="book-info-title">${title} ${book.favorite ? '<i class="fa-solid fa-star book-favorite"></i>' : ""}</div><div class="book-info-meta"><span>${author}</span><span>${pages} ${pages === 1 ? "page" : "pages"}</span></div></div></article>`;
+    }).join("");
+}
+
+function showLibrary(){ document.body.dataset.view="library"; renderLibrary(); }
+function showWorkspace(){ document.body.dataset.view="workspace"; }
+function toggleLibraryFileMenu(){ document.getElementById("libraryFileMenu").classList.toggle("show"); }
+function closeLibraryFileMenu(){ document.getElementById("libraryFileMenu").classList.remove("show"); }
+function openHomeExportPicker(format){
+    const menu=document.getElementById("libraryFileMenu");
+    if(!books.length){ showToast("Create a book before exporting."); return; }
+    const exportLabel=format === "pdf" ? "PDF" : "NeuroNote (.nn)";
+    menu.innerHTML=`<button class="library-menu-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button><span>EXPORT AS ${exportLabel.toUpperCase()}</span>${books.map((book,index)=>`<button class="library-export-book" type="button" data-book-index="${index}"><i class="fa-solid fa-book"></i> ${escapeLibraryText(book.title || "Untitled Book")}</button>`).join("")}`;
+    menu.querySelector(".library-menu-back").addEventListener("click", renderHomeFileMenu);
+    menu.querySelectorAll(".library-export-book").forEach(button=>button.addEventListener("click",()=>{const book=books[Number(button.dataset.bookIndex)]; closeLibraryFileMenu(); if(format === "pdf") exportBookPDF(book); else exportBookNN(book);}));
+}
+function renderHomeFileMenu(){
+    const menu=document.getElementById("libraryFileMenu");
+    menu.innerHTML=`<span>Import</span><button type="button" data-home-file-action="import-nn">NeuroNote (.nn)</button><button type="button" data-home-file-action="import-pdf">PDF</button><span>Export</span><button type="button" data-home-file-action="export-nn">NeuroNote (.nn)</button><button type="button" data-home-file-action="export-pdf">PDF</button>`;
+    menu.querySelector('[data-home-file-action="import-nn"]').addEventListener("click",()=>{closeLibraryFileMenu();importNN();});
+    menu.querySelector('[data-home-file-action="import-pdf"]').addEventListener("click",()=>{closeLibraryFileMenu();importPDF();});
+    menu.querySelector('[data-home-file-action="export-nn"]').addEventListener("click",()=>openHomeExportPicker("nn"));
+    menu.querySelector('[data-home-file-action="export-pdf"]').addEventListener("click",()=>openHomeExportPicker("pdf"));
+}
+function openBookFromLibrary(bookIndex){ const book=books[bookIndex]; if(!book) return; if(!book.chapters) book.chapters=[]; if(!book.chapters.length) book.chapters.push({title:"Chapter 1",pages:[]}); if(!book.chapters[0].pages.length) book.chapters[0].pages.push({title:"Page 1",content:"<h1>Welcome</h1><p>Start your story here.</p>"}); currentBookIndex=bookIndex; showWorkspace(); renderBooks(); openPage(bookIndex,0,0); }
+function toggleBookMenu(bookIndex){ document.querySelectorAll(".book-menu-popover").forEach(menu=>menu.classList.remove("show")); const menu=document.getElementById(`bookMenu-${bookIndex}`); if(menu) menu.classList.add("show"); }
+function toggleFavorite(bookIndex){ books[bookIndex].favorite=!books[bookIndex].favorite; saveData(); if(window.saveBooksToCloud) saveBooksToCloud(); renderBooks(); }
+function duplicateBook(bookIndex){ const copy=JSON.parse(JSON.stringify(books[bookIndex])); copy.title=`${copy.title} copy`; books.splice(bookIndex+1,0,copy); saveData(); if(window.saveBooksToCloud) saveBooksToCloud(); renderBooks(); showToast("Book duplicated"); }
+
+function openBookCreator(bookIndex){ const modal=document.getElementById("bookCreatorModal"),book=Number.isInteger(bookIndex) ? books[bookIndex] : null; modal.dataset.editIndex=book ? String(bookIndex) : ""; document.getElementById("coverTitleInput").value=book ? book.title : ""; document.getElementById("coverSubtitleInput").value=book ? (book.subtitle || "") : ""; document.getElementById("coverAuthorInput").value=book ? (book.author || "") : ""; document.getElementById("coverStyleInput").value=book && book.cover ? (book.cover.style || "cinematic") : "cinematic"; document.getElementById("coverFontInput").value=book && book.cover ? (book.cover.font || "serif") : "serif"; document.getElementById("coverColorInput").value=book && book.cover ? (book.cover.color || "#ffffff") : "#ffffff"; document.getElementById("coverSizeInput").value=book && book.cover ? (book.cover.size || 42) : 42; document.getElementById("coverOpacityInput").value=book && book.cover ? (book.cover.opacity ?? 100) : 100; const image=document.getElementById("coverImagePreview"); image.src=book && book.cover ? (book.cover.image || "") : ""; image.hidden=!(book && book.cover && book.cover.image); activeCoverAlignment=book && book.cover ? (book.cover.alignment || "left") : "left"; updateCoverPreview(); modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); }
+function closeBookCreator(){ const modal=document.getElementById("bookCreatorModal"); modal.classList.remove("show"); modal.setAttribute("aria-hidden","true"); }
+function setCoverAlignment(alignment){ activeCoverAlignment=alignment; updateCoverPreview(); }
+function getCoverFont(font){
+    const fonts={
+        serif:'Georgia, "Times New Roman", serif',
+        sans:'Inter, Arial, Helvetica, sans-serif',
+        editorial:'Baskerville, "Palatino Linotype", Palatino, serif',
+        handwritten:'"Segoe Print", "Bradley Hand", cursive',
+        futuristic:'"Courier New", Consolas, monospace',
+        minimal:'Arial, Helvetica, sans-serif',
+        classic:'Garamond, "Times New Roman", serif'
+    };
+    return fonts[font] || fonts.serif;
+}
+function updateCoverPreview(){ const title=document.getElementById("coverTitleInput").value || "Untitled book",subtitle=document.getElementById("coverSubtitleInput").value || "A place for your next idea",author=document.getElementById("coverAuthorInput").value || "NeuroNote",preview=document.getElementById("coverPreview"),text=document.getElementById("coverTextPreview"),font=getCoverFont(document.getElementById("coverFontInput").value); document.getElementById("previewTitle").textContent=title; document.getElementById("previewSubtitle").textContent=subtitle; document.getElementById("previewAuthor").textContent=author; preview.className=`cover-preview style-${document.getElementById("coverStyleInput").value}`; text.className=`cover-text-preview align-${activeCoverAlignment}`; text.style.color=document.getElementById("coverColorInput").value; text.style.opacity=document.getElementById("coverOpacityInput").value/100; text.style.fontFamily=font; document.getElementById("previewTitle").style.fontFamily=font; document.getElementById("previewTitle").style.fontSize=`${document.getElementById("coverSizeInput").value}px`; }
+function createBookFromCover(){
+    let createdBook = null;
+    try {
+        const title=document.getElementById("coverTitleInput").value.trim() || "Untitled Book";
+        const image=document.getElementById("coverImagePreview").src || "";
+        const cover={ image:image.startsWith("data:") ? image : "", style:document.getElementById("coverStyleInput").value, font:document.getElementById("coverFontInput").value, color:document.getElementById("coverColorInput").value, size:Number(document.getElementById("coverSizeInput").value), opacity:Number(document.getElementById("coverOpacityInput").value), alignment:activeCoverAlignment };
+        const data={ title, subtitle:document.getElementById("coverSubtitleInput").value.trim(), author:document.getElementById("coverAuthorInput").value.trim(), cover };
+        const modal=document.getElementById("bookCreatorModal");
+        const editIndex=modal.dataset.editIndex;
+        if(editIndex !== "") {
+            Object.assign(books[Number(editIndex)],data);
+        } else {
+            data.chapters=[{title:"Chapter 1",pages:[{title:"Page 1",content:"<h1>Welcome to your new book</h1><p>Begin wherever inspiration takes you.</p>"}]}];
+            books.unshift(data);
+            createdBook = data;
+        }
+        saveData();
+        closeBookCreator();
+        renderBooks();
+        if(typeof window.saveBooksToCloud === "function") window.saveBooksToCloud();
+        if(editIndex === "") openBookFromLibrary(0); else showToast("Cover updated");
+    } catch(error) {
+        if(createdBook){
+            const createdIndex = books.indexOf(createdBook);
+            if(createdIndex !== -1) books.splice(createdIndex, 1);
+        }
+        console.error("Could not create book", error);
+        showToast(error && error.name === "QuotaExceededError" ? "Cover image is still too large. Choose a smaller image." : "Could not create the book. Please try again.");
+    }
+}
+function editCover(bookIndex){openBookCreator(bookIndex)}
+function openSettingsModal(){ const modal=document.getElementById("settingsModal"); if(modal){modal.classList.add("show");modal.setAttribute("aria-hidden","false");} }
+function closeSettingsModal(){ const modal=document.getElementById("settingsModal"); modal.classList.remove("show");modal.setAttribute("aria-hidden","true"); }
+window.openBookCreator=openBookCreator;window.closeBookCreator=closeBookCreator;window.setCoverAlignment=setCoverAlignment;window.createBookFromCover=createBookFromCover;window.openBookFromLibrary=openBookFromLibrary;window.toggleBookMenu=toggleBookMenu;window.toggleFavorite=toggleFavorite;window.duplicateBook=duplicateBook;window.editCover=editCover;window.openSettingsModal=openSettingsModal;window.closeSettingsModal=closeSettingsModal;window.toggleLibraryFileMenu=toggleLibraryFileMenu;window.closeLibraryFileMenu=closeLibraryFileMenu;
+const createBookAction = document.querySelector(".create-book-action");
+createBookAction.type = "button";
+createBookAction.removeAttribute("onclick");
+createBookAction.addEventListener("click", event => {
+    event.preventDefault();
+    if(createBookAction.dataset.busy === "true") return;
+    createBookAction.dataset.busy = "true";
+    createBookAction.innerHTML = 'Creating <i class="fa-solid fa-spinner fa-spin"></i>';
+    try {
+        createBookFromCover();
+    } finally {
+        createBookAction.dataset.busy = "false";
+        createBookAction.innerHTML = 'Create Book <i class="fa-solid fa-arrow-right"></i>';
+    }
+});
+document.querySelectorAll("#coverTitleInput,#coverSubtitleInput,#coverAuthorInput,#coverStyleInput,#coverFontInput,#coverColorInput,#coverSizeInput,#coverOpacityInput").forEach(input=>input.addEventListener("input",updateCoverPreview));
+function optimiseCoverImage(file){
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("The cover image could not be read."));
+        reader.onload = () => {
+            const source = new Image();
+            source.onerror = () => reject(new Error("The selected file is not a usable image."));
+            source.onload = () => {
+                const maxEdge = 960;
+                const ratio = Math.min(1, maxEdge / Math.max(source.width, source.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(source.width * ratio));
+                canvas.height = Math.max(1, Math.round(source.height * ratio));
+                const context = canvas.getContext("2d");
+                context.drawImage(source, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/jpeg", 0.72));
+            };
+            source.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+document.getElementById("coverImageInput").addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if(!file) return;
+    const picker = event.target;
+    picker.disabled = true;
+    try {
+        const compressedImage = await optimiseCoverImage(file);
+        const image = document.getElementById("coverImagePreview");
+        image.src = compressedImage;
+        image.hidden = false;
+        showToast("Cover image optimized for your library");
+    } catch(error) {
+        console.error("Could not prepare cover image", error);
+        showToast("That image could not be used as a cover.");
+    } finally {
+        picker.disabled = false;
+    }
+});
+document.querySelector(".logo-title").addEventListener("click",showLibrary);document.querySelector(".logo-title").style.cursor="pointer";
+menuBtn.innerHTML = '<i class="fa-solid fa-bars-staggered"></i>';
+menuBtn.setAttribute("aria-label", "Show current book outline");
+document.addEventListener("click",event=>{if(!event.target.closest(".library-book"))document.querySelectorAll(".book-menu-popover").forEach(menu=>menu.classList.remove("show"));if(!event.target.closest(".library-file-menu"))closeLibraryFileMenu();});
+renderHomeFileMenu();
+
+/* =========================
    START APP
 ========================= */
 
 renderBooks();
+showLibrary();
 
 console.log(
     "NeuroNote Loaded Successfully"
